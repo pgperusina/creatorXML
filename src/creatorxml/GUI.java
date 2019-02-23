@@ -5,19 +5,26 @@
  */
 package creatorxml;
 
+import analyzers.lexer;
+import analyzers.parser;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.Writer;
-import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.stage.FileChooser;
+import java_cup.runtime.ComplexSymbolFactory;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -32,7 +39,7 @@ public class GUI extends javax.swing.JFrame {
      * Creates new form GUI
      */
     public GUI() {
-        this.tabFileNames = new LinkedList<>();
+        this.tabFileNames = new HashMap();
         initComponents();
     }
 
@@ -48,6 +55,7 @@ public class GUI extends javax.swing.JFrame {
         jTabbedPane1 = new javax.swing.JTabbedPane();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTextArea1 = new javax.swing.JTextArea();
+        botonCompilar = new javax.swing.JButton();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         jMenuItem6 = new javax.swing.JMenuItem();
@@ -69,6 +77,13 @@ public class GUI extends javax.swing.JFrame {
         jScrollPane1.setViewportView(jTextArea1);
 
         jTabbedPane1.addTab("Untitled", jScrollPane1);
+
+        botonCompilar.setText("Compilar");
+        botonCompilar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                botonCompilarActionPerformed(evt);
+            }
+        });
 
         jMenu1.setText("Archivo");
 
@@ -152,15 +167,21 @@ public class GUI extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 920, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 943, Short.MAX_VALUE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(botonCompilar)
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(23, 23, 23)
+                .addGap(32, 32, 32)
+                .addComponent(botonCompilar)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 500, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(145, Short.MAX_VALUE))
+                .addContainerGap(196, Short.MAX_VALUE))
         );
 
         pack();
@@ -207,7 +228,7 @@ public class GUI extends javax.swing.JFrame {
      */
     private void jMenuItem6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem6ActionPerformed
         this.jFileChooser1 = new JFileChooser();
-        FileFilter filter = new FileNameExtensionFilter("GXML and FS Files","gxml", "fs");
+        FileFilter filter = new FileNameExtensionFilter("GXML and FS Files","xml", "gxml", "fs");
         this.jFileChooser1.setFileFilter(filter);
         this.jFileChooser1.setCurrentDirectory(new File(System.getProperty("user.dir")));
         
@@ -222,7 +243,7 @@ public class GUI extends javax.swing.JFrame {
                 this.getActiveTextArea().requestFocus();
                 this.jMenuItem7.setEnabled(true);
                 this.jTabbedPane1.setTitleAt(this.jTabbedPane1.getSelectedIndex(), file.getName());
-                this.tabFileNames.add(this.jTabbedPane1.getSelectedIndex(), file.getAbsolutePath());
+                this.tabFileNames.put(this.jTabbedPane1.getSelectedIndex(), file.getAbsolutePath());
             } catch (FileNotFoundException ex) {
                 Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
@@ -279,6 +300,31 @@ public class GUI extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jMenuItem7ActionPerformed
 
+    private void botonCompilarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonCompilarActionPerformed
+        // TODO add your handling code here:
+        try {
+
+            /*
+            InputStream input = new ByteArrayInputStream(this.getActiveTextArea().getText().getBytes());
+            Reader currentFile = new InputStreamReader(input);
+            analyzers.lexer scanner = new lexer((Reader)currentFile);
+            //parser p = new parser (scanner, new ComplexSymbolFactory());
+            */
+            
+            analyzers.lexer scanner = new lexer(new FileReader(
+            "/Users/pgarcia/Documents/USAC/1erSemestre2019/Compiladores2/Lab/proyectos/temp.xml" ));
+
+            parser p = new parser (scanner);
+
+            p.debug_parse();
+            
+
+        } catch (Exception ex) {
+            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+        }
+    }//GEN-LAST:event_botonCompilarActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -314,11 +360,12 @@ public class GUI extends javax.swing.JFrame {
         });
     }
     
-    private final LinkedList<String> tabFileNames;
+    private final Map<Integer,String> tabFileNames;
     
     private JFileChooser jFileChooser1;
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton botonCompilar;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenu jMenu3;

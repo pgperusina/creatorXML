@@ -1,0 +1,105 @@
+package usac.compiladores;
+
+import java_cup.runtime.*;
+
+parser code {:
+
+    private void printMessage(String s) {
+        System.out.println(s);
+    }
+
+    //TablaSimbolos manejadorTablaSimbolos = new TablaSimbolos();
+
+:}
+
+
+terminal ABRE_TAG;
+terminal CIERRA_TAG;
+terminal TAG_FINAL;
+terminal ABRE_TAG_IMPORTAR;
+terminal CIERRA_TAG_IMPORTAR;
+terminal FUNCION;
+
+terminal ALLAVE;
+terminal CLLAVE;
+terminal APAR;
+terminal CPAR;
+terminal COMILLA;
+terminal DIAGONAL;
+terminal IGUAL;
+
+terminal String TEXTO;
+terminal String TEXTO_MULTIPLE;
+terminal String VALOR_ATRIBUTO;
+terminal String PATH;
+
+terminal String NOMBRE;
+terminal String ENTERO;
+
+terminal String PARAMETROS;
+
+
+
+non terminal S;
+
+non terminal LTags;
+non terminal Limportar;
+non terminal Importar;
+non terminal Tag;
+non terminal Latributos;
+non terminal TagInicial;
+non terminal TagFinal;
+non terminal Atributo;
+non terminal Contenido;
+
+
+start with S;
+
+S           ::= LTags {: printMessage("fin parse"); :};
+
+
+LTags       ::= LTags Tag:nombre {: RESULT = nombre; :}
+            |   Tag:nombre {: RESULT = nombre; :};
+
+Tag         ::= TagInicial:nombre Contenido:cont TagFinal 
+                {: 
+                    RESULT = nombre;
+                    printMessage("parser en reducción TAG: " + nombre + " -- " + cont ); 
+                :};
+
+TagInicial  ::= ABRE_TAG NOMBRE:nombre Latributos CIERRA_TAG
+                {: 
+                    RESULT = nombre;
+                    printMessage("parser reducción tag inicial con atributos: - "+nombre);
+                :}
+
+            |   ABRE_TAG NOMBRE:nombre CIERRA_TAG
+                {: 
+                    RESULT = nombre;
+                    printMessage("parser reducción tag inicial: - "+nombre);
+                :};
+TagFinal    ::= ABRE_TAG DIAGONAL NOMBRE CIERRA_TAG;
+
+Contenido   ::= Contenido Tag:nombre  {:
+                                RESULT = nombre;
+                                printMessage("parser en lista tags contenido - "+ nombre);
+                            :}
+            |   Tag:nombre     {:
+                               RESULT = nombre;
+                               printMessage("parser en tag contenido - "+ nombre);
+                           :}
+           /* |   PATH:path   {:
+                                RESULT = path;
+                                printMessage("parser en path - "+ path); 
+                            :}*/
+            |   TEXTO_MULTIPLE:texto {:
+                                RESULT = texto;
+                                printMessage("parser en texto multiple cuerpo tag - "+ texto);
+                            :};
+
+Latributos  ::= Latributos Atributo
+            |   Atributo;
+
+Atributo    ::= NOMBRE IGUAL TEXTO
+            |   NOMBRE IGUAL FUNCION
+            |   NOMBRE IGUAL ENTERO;
