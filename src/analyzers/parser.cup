@@ -8,6 +8,25 @@ parser code {:
         System.out.println(s);
     }
 
+    /**
+     * Método invocado cuando ocurre un error sintáctico.
+     **/
+    public void syntax_error(Symbol s){
+            System.err.println("Error sintáctico en la línea " + (s.left) +" Columna "+s.right+ ". No se esperaba este componente: " +s.value+".");
+    }
+
+    /**
+     * Método invocado cuando es imposible una recuperación de errores
+     **/
+    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception {
+            System.err.println("Error síntactico irrecuperable, Línea " + (s.left)+ " Columna "+s.right+". Elemento " + s.value + " no reconocido.");
+    }
+
+    /**
+     * Método que devuelve el AST que se generó después de realizar el análisis sintáctico.
+     * @return árbol de sintaxis abstacta que será utilizado posteriormente en la ejecución.
+     */
+
     //TablaSimbolos manejadorTablaSimbolos = new TablaSimbolos();
 
 :}
@@ -19,6 +38,7 @@ terminal TAG_FINAL;
 terminal ABRE_TAG_IMPORTAR;
 terminal CIERRA_TAG_IMPORTAR;
 terminal FUNCION;
+terminal MULTIMEDIA_ID;
 
 terminal ALLAVE;
 terminal CLLAVE;
@@ -51,6 +71,7 @@ non terminal TagInicial;
 non terminal TagFinal;
 non terminal Atributo;
 non terminal Contenido;
+non terminal ListaTextoMultiple;
 
 
 start with S;
@@ -78,7 +99,10 @@ TagInicial  ::= ABRE_TAG NOMBRE:nombre Latributos CIERRA_TAG
                     RESULT = nombre;
                     printMessage("parser reducción tag inicial: - "+nombre);
                 :};
-TagFinal    ::= ABRE_TAG DIAGONAL NOMBRE CIERRA_TAG;
+TagFinal    ::= ABRE_TAG DIAGONAL NOMBRE:nombre CIERRA_TAG {:
+                    RESULT = nombre;
+                    printMessage("parser reducción tag final: - "+nombre);
+                :};
 
 Contenido   ::= Contenido Tag:nombre  {:
                                 RESULT = nombre;
@@ -92,14 +116,24 @@ Contenido   ::= Contenido Tag:nombre  {:
                                 RESULT = path;
                                 printMessage("parser en path - "+ path); 
                             :}*/
-            |   TEXTO_MULTIPLE:texto {:
+            |   ListaTextoMultiple:texto {:
                                 RESULT = texto;
-                                printMessage("parser en texto multiple cuerpo tag - "+ texto);
+                                printMessage("parser en cuerpo tag - Lista TExto Multiple - "+ texto);
                             :};
+
+ListaTextoMultiple  ::= ListaTextoMultiple:texto1 TEXTO_MULTIPLE:texto2 {:
+                                        RESULT = texto1 + texto2;
+                                        printMessage("parser en lista texto multiple - "+ texto1 + texto2);
+                                    :}
+                    |   TEXTO_MULTIPLE:texto {:
+                                                 RESULT = texto;
+                                                 printMessage("parser en lista texto multiple cuerpo tag - "+ texto);
+                                             :};
 
 Latributos  ::= Latributos Atributo
             |   Atributo;
 
 Atributo    ::= NOMBRE IGUAL TEXTO
             |   NOMBRE IGUAL FUNCION
-            |   NOMBRE IGUAL ENTERO;
+            |   NOMBRE IGUAL ENTERO
+            |   NOMBRE IGUAL MULTIMEDIA_ID;

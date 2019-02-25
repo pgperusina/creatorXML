@@ -10,9 +10,15 @@ import java_cup.runtime.*;
 %column
 %line
 %caseless
+%ignorecase
 %state MLCOMMENT
 %state SLCOMMENT
 %state TAG_BODY
+
+%init{
+    yyline = 1;
+    yychar = 1;
+%init}
 
 %{
     StringBuilder textoMultiple = new StringBuilder();
@@ -36,16 +42,19 @@ letra=[a-zA-Z]
 digito=[0-9]
 S = (\u0020)  //whitespace
 
-id = [:jletter:]( "_" | "-" | [:jletterdigit:])*
+//id = [:jletter:]( "_" | "-"| "/"| "." | [:jletterdigit:])*
+id = [:jletter:] ( "_" | "-"| "/"| "." | [:jletterdigit:])*
 path = ("/"( "_" | "." | [:jletterdigit:])*)+
 texto_multiple = [^\r\n\<\>\(\)]*
+texto_multiples_lineas = [^\r\n\<\>\(\)]*
 funcion = "{" {id} "(" {texto_multiple} ")" "}"
+multimedia_id = "/" {id} "." {id}
 
 %%
 
 <YYINITIAL> "<"
                         {
-                            yybegin(YYINITIAL);
+                            //yybegin(YYINITIAL);
                             String abreTag = new String(yytext());
                             System.out.println("ABRE TAG --"+yytext()); 
                             return symbol(sym.ABRE_TAG, abreTag);
@@ -78,6 +87,12 @@ funcion = "{" {id} "(" {texto_multiple} ")" "}"
                             return symbol(sym.TEXTO, a);
                         }
 
+<YYINITIAL> \"{multimedia_id}\"    {
+                            String a = new String(yytext());
+                            System.out.println("VALOR ATRIBUTO MULTIMEDIA ID --" + a);
+                            return symbol(sym.MULTIMEDIA_ID, a);
+                        }
+
 <YYINITIAL> {funcion}  {
                             String a = new String(yytext());
                             System.out.println("FUNCION --" + a);
@@ -105,11 +120,11 @@ funcion = "{" {id} "(" {texto_multiple} ")" "}"
                             return symbol(sym.ABRE_TAG, yytext());
                         }
 
-    {texto_multiple}*
+    {texto_multiple}
                             {
                                 //yybegin(YYINITIAL);
-                                textoMultiple.append(yytext());
-                                System.out.println("TEXTO MULTIPLE (tag body) --" + textoMultiple);
+                                System.out.println("TEXTO MULTIPLES LINEAS (tag body) --" + yytext());
+                                return symbol(sym.TEXTO_MULTIPLE, yytext());
                             }
 }
 
