@@ -316,7 +316,7 @@ public class GUI extends javax.swing.JFrame {
 
             parser p = new parser (scanner);
 
-            p.debug_parse();
+            p.parse();
             
 
         } catch (Exception ex) {

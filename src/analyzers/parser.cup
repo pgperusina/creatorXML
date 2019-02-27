@@ -1,25 +1,39 @@
-package usac.compiladores;
+package analyzers;
 
+import AST.NodoAST;
+
+import AST.Arbol;
+import AST.Atributo;
+import AST.Etiqueta;
+import AST.EtiquetaTexto;
+import AST.ListaAtributos;
+import AST.TagInicial;
+import java.util.LinkedList;
 import java_cup.runtime.*;
 
 parser code {:
+
+    /**
+    * Variable para almacenar el AST formado en el análisis sintáctico.
+    */
+    public Arbol AST;
 
     private void printMessage(String s) {
         System.out.println(s);
     }
 
     /**
-     * Método invocado cuando ocurre un error sintáctico.
+     * Método invocado cuando ocurre un errorxxx sintáctico.
      **/
     public void syntax_error(Symbol s){
-            System.err.println("Error sintáctico en la línea " + (s.left) +" Columna "+s.right+ ". No se esperaba este componente: " +s.value+".");
+            System.err.println("Error sintáctico en la línea " + (s.left) +" Columna "+s.right+ ". No se esperaba este componente: " +s.value.toString()+".");
     }
 
     /**
      * Método invocado cuando es imposible una recuperación de errores
      **/
     public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception {
-            System.err.println("Error síntactico irrecuperable, Línea " + (s.left)+ " Columna "+s.right+". Elemento " + s.value + " no reconocido.");
+            System.err.println("Error síntactico irrecuperable, Línea " + (s.left)+ " Columna "+s.right + s.value.toString() + " no reconocido.");
     }
 
     /**
@@ -34,106 +48,88 @@ parser code {:
 
 terminal ABRE_TAG;
 terminal CIERRA_TAG;
-terminal TAG_FINAL;
-terminal ABRE_TAG_IMPORTAR;
-terminal CIERRA_TAG_IMPORTAR;
-terminal FUNCION;
-terminal MULTIMEDIA_ID;
-
-terminal ALLAVE;
-terminal CLLAVE;
-terminal APAR;
-terminal CPAR;
-terminal COMILLA;
 terminal DIAGONAL;
 terminal IGUAL;
 
 terminal String TEXTO;
 terminal String TEXTO_MULTIPLE;
-terminal String VALOR_ATRIBUTO;
-terminal String PATH;
+terminal String MULTIMEDIA_ID;
+terminal String FUNCION;
+
 
 terminal String NOMBRE;
 terminal String ENTERO;
 
-terminal String PARAMETROS;
-
-
 
 non terminal S;
 
-non terminal LTags;
-non terminal Limportar;
-non terminal Importar;
-non terminal Tag;
-non terminal Latributos;
-non terminal TagInicial;
-non terminal TagFinal;
-non terminal Atributo;
-non terminal Contenido;
-non terminal ListaTextoMultiple;
+non terminal LinkedList<NodoAST> LTags;
+non terminal Etiqueta Tag;
+non terminal ListaAtributos Latributos;
+non terminal TagInicial TagInicial;
+non terminal String TagFinal;
+non terminal Atributo Atributo;
+non terminal LinkedList<NodoAST> Contenido;
+non terminal EtiquetaTexto ListaTextoMultiple;
 
 
 start with S;
 
-S           ::= LTags {: printMessage("fin parse"); :};
+S           ::= LTags:listaTags                 {: parser.AST = new Arbol(listaTags);   printMessage(parser.AST.toString()); :};
 
 
-LTags       ::= LTags Tag:nombre {: RESULT = nombre; :}
-            |   Tag:nombre {: RESULT = nombre; :};
+LTags       ::= LTags:listaTags Tag:tag         {: RESULT = listaTags; listaTags.add(tag); :}
+            |   Tag:tag
+                                                {:  RESULT = new LinkedList<NodoAST>(); RESULT.add(tag); :};
 
-Tag         ::= TagInicial:nombre Contenido:cont TagFinal 
-                {: 
-                    RESULT = nombre;
-                    printMessage("parser en reducción TAG: " + nombre + " -- " + cont ); 
-                :};
+Tag         ::= TagInicial:tagInicial Contenido:contenido TagFinal:tagFinal
+                                                {:
+                                                    RESULT = new Etiqueta(tagInicial, tagFinal, contenido);
+                                                :};
 
-TagInicial  ::= ABRE_TAG NOMBRE:nombre Latributos CIERRA_TAG
-                {: 
-                    RESULT = nombre;
-                    printMessage("parser reducción tag inicial con atributos: - "+nombre);
-                :}
+TagInicial  ::= ABRE_TAG NOMBRE:nombreTag Latributos:listaAtributos CIERRA_TAG
+                                                {:
+                                                    RESULT = new TagInicial(nombreTag, listaAtributos);
+                                                :}
+            |   ABRE_TAG NOMBRE:nombreTag CIERRA_TAG
+                                                {:
+                                                    RESULT = new TagInicial(nombreTag);
+                                                :};
+TagFinal    ::= ABRE_TAG DIAGONAL NOMBRE:nombreTag CIERRA_TAG
+                                                {:
+                                                    RESULT = nombreTag;
+                                                :};
 
-            |   ABRE_TAG NOMBRE:nombre CIERRA_TAG
-                {: 
-                    RESULT = nombre;
-                    printMessage("parser reducción tag inicial: - "+nombre);
-                :};
-TagFinal    ::= ABRE_TAG DIAGONAL NOMBRE:nombre CIERRA_TAG {:
-                    RESULT = nombre;
-                    printMessage("parser reducción tag final: - "+nombre);
-                :};
 
-Contenido   ::= Contenido Tag:nombre  {:
-                                RESULT = nombre;
-                                printMessage("parser en lista tags contenido - "+ nombre);
-                            :}
-            |   Tag:nombre     {:
-                               RESULT = nombre;
-                               printMessage("parser en tag contenido - "+ nombre);
-                           :}
-           /* |   PATH:path   {:
-                                RESULT = path;
-                                printMessage("parser en path - "+ path); 
-                            :}*/
-            |   ListaTextoMultiple:texto {:
-                                RESULT = texto;
-                                printMessage("parser en cuerpo tag - Lista TExto Multiple - "+ texto);
-                            :};
+Contenido   ::= Contenido:contenido Tag:tag      {:
+                                                        RESULT = contenido;
+                                                        RESULT.add(tag);
+                                                    :}
+            |   Tag:tag                             {:
+                                                       RESULT = new LinkedList<NodoAST>();
+                                                       RESULT.add(tag);
+                                                    :}
+            |   ListaTextoMultiple:textoMultiple
+                                                    {:
+                                                        RESULT = new LinkedList<NodoAST>();
+                                                        RESULT.add(textoMultiple);
+                                                    :};
 
-ListaTextoMultiple  ::= ListaTextoMultiple:texto1 TEXTO_MULTIPLE:texto2 {:
-                                        RESULT = texto1 + texto2;
-                                        printMessage("parser en lista texto multiple - "+ texto1 + texto2);
-                                    :}
-                    |   TEXTO_MULTIPLE:texto {:
-                                                 RESULT = texto;
-                                                 printMessage("parser en lista texto multiple cuerpo tag - "+ texto);
-                                             :};
+ListaTextoMultiple  ::= ListaTextoMultiple:listaTexto TEXTO_MULTIPLE:texto
+                                                    {:
+                                                        listaTexto.texto.append(texto.trim());
+                                                        RESULT = listaTexto;
+                                                    :}
+                    |   TEXTO_MULTIPLE:texto
+                                                    {:
+                                                        RESULT = new EtiquetaTexto(new StringBuilder(texto));
+                                                    :};
 
-Latributos  ::= Latributos Atributo
-            |   Atributo;
 
-Atributo    ::= NOMBRE IGUAL TEXTO
-            |   NOMBRE IGUAL FUNCION
-            |   NOMBRE IGUAL ENTERO
-            |   NOMBRE IGUAL MULTIMEDIA_ID;
+Latributos  ::= Latributos:latributos Atributo:atributo     {: RESULT = latributos; RESULT.add(atributo); :}
+            |   Atributo:atributo                           {: RESULT =  new ListaAtributos(); RESULT.add(atributo); :};
+
+Atributo    ::= NOMBRE:nombre IGUAL TEXTO:valor             {: RESULT = new Atributo(nombre, valor); :}
+            |   NOMBRE:nombre IGUAL FUNCION:valor           {: RESULT = new Atributo(nombre, valor); :}
+            |   NOMBRE:nombre IGUAL ENTERO:valor            {: RESULT = new Atributo(nombre, valor); :}
+            |   NOMBRE:nombre IGUAL MULTIMEDIA_ID:valor     {: RESULT = new Atributo(nombre, valor); :};
